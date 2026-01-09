@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" >
+<head>
+    <title>Test Control Center</title>
+    <style>
+        body { font-family: sans-serif; padding: 50px; text-align: center; }
+        #progress-bar { width: 500px; height: 30px; border: 1px solid #ccc; margin: 20px auto; }
+        #fill { width: 0%; height: 100%; background: #4CAF50; transition: width 0.5s; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<h1>Test Execution Control</h1>
+<button onclick="startTest()">▶ Run Test Suite</button>
+
+<div id="progress-bar"><div id="fill"></div></div>
+<p id="status-text">Status: IDLE</p>
+
+<script>
+        function startTest() {
+            // Call the POST API
+            fetch('/schedule/run', { method: 'POST' })
+                .then(res => res.text())
+                .then(data => {
+                    alert(data);
+                    pollStatus(); // Start checking for progress
+                });
+        }
+
+        function pollStatus() {
+            const interval = setInterval(() => {
+                fetch('/execution/status')
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('status-text').innerText =
+                            `Status: ${data.status} (${data.completedTests}/${data.totalTests})`;
+
+                        let percent = (data.completedTests / data.totalTests) * 100;
+                        document.getElementById('fill').style.width = percent + "%";
+
+                        if (data.status === 'COMPLETED') clearInterval(interval);
+                    });
+            }, 1000); // Check every 1 second
+        }
+    </script>
+</body>
+</html>
